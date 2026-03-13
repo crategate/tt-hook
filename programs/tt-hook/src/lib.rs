@@ -81,9 +81,11 @@ pub mod tt_hook {
      //   //    return err!(MyError::AmountTooBig);
      //   }
 
-        ctx.accounts.counter_account.counter.checked_add(1);
+        let counter = &mut ctx.accounts.counter_account;
+        counter.counter += 1;
+       // ctx.accounts.counter_account.counter.checked_add(1).unwrap();
 
-        msg!("This token has been transfered {0} times", ctx.accounts.counter_account.counter);
+        msg!("This token has been transfered {} times", counter.counter);
 
         Ok(())
     }
@@ -161,6 +163,7 @@ pub struct TransferHook<'info> {
     )]
     pub extra_account_meta_list: UncheckedAccount<'info>,
     #[account(
+        mut,
         seeds = [b"counter"],
         bump
     )]
