@@ -6,7 +6,9 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
-    "chai-as-promised": "^8.0.2"
+    "@solana/kit": "^6.3.1",
+    "chai-as-promised": "^8.0.2",
+    "solana-kite": "^3.2.1"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
