@@ -6,7 +6,11 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
-    "chai-as-promised": "^8.0.2"
+    "@solana-developers/helpers": "^2.8.1",
+    "@solana/spl-token-metadata": "^0.1.6",
+    "chai-as-promised": "^8.0.2",
+    "esrun": "^3.2.30",
+    "gill": "^0.14.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",

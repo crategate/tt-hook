@@ -18,8 +18,11 @@ import {
 	createAssociatedTokenAccountInstruction,
 	createMintToInstruction,
 	getAssociatedTokenAddressSync,
+	TYPE_SIZE,
+	LENGTH_SIZE,
 	createTransferCheckedWithTransferHookInstruction
 } from "@solana/spl-token";
+import { pack, type TokenMetadata } from "@solana/spl-token-metadata";
 
 describe("transfer-hook", () => {
 	// Configure the client to use the local cluster.
@@ -65,11 +68,26 @@ describe("transfer-hook", () => {
 		program.programId
 	);
 
-	it("Create Mint Account with Transfer Hook Extension", async () => {
+	// token metadata
+	const metadata: TokenMetadata = {
+		mint: mint.publicKey,
+		name: 'Testy_Token',
+		symbol: 'TTTKN',
+		uri: 'https://copper-quick-koi-488.mypinata.cloud/ipfs/bafkreiblskodz5bwtelz4id437rnhsndtq3rfh7jjsgaj72wb55cgnbbea',
+		additionalMetadata: [['description', 'a token with metadata & transfer hook. I hope.']],
+	};
+	const metadataLen = pack(metadata).length;
+	const metadataExtension = TYPE_SIZE + LENGTH_SIZE;
+	const spaceWithoutMetaDataExtension = getMintLen([ExtensionType.MetadataPointer])
+
+
+
+
+	it("Create Mint Account with Transfer Hook Extension & MetaData", async () => {
 		const extensions = [ExtensionType.TransferHook];
 		const mintLen = getMintLen(extensions);
 		const lamports =
-			await provider.connection.getMinimumBalanceForRentExemption(mintLen);
+			await provider.connection.getMinimumBalanceForRentExemption(mintLen + spaceWithoutMetaDataExtension + metadataLen + metadataExtension);
 
 		const transaction = new Transaction().add(
 			SystemProgram.createAccount({
