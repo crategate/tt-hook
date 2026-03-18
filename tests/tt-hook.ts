@@ -7,6 +7,7 @@ import {
 	Transaction,
 	sendAndConfirmTransaction,
 	Keypair,
+	SendTransactionError,
 } from "@solana/web3.js";
 import {
 	ExtensionType,
@@ -20,9 +21,10 @@ import {
 	getAssociatedTokenAddressSync,
 	TYPE_SIZE,
 	LENGTH_SIZE,
-	createTransferCheckedWithTransferHookInstruction
+	createTransferCheckedWithTransferHookInstruction,
+	createInitializeMetadataPointerInstruction,
 } from "@solana/spl-token";
-import { pack, type TokenMetadata } from "@solana/spl-token-metadata";
+import { createInitializeInstruction, pack, type TokenMetadata } from "@solana/spl-token-metadata";
 
 describe("transfer-hook", () => {
 	// Configure the client to use the local cluster.
@@ -71,10 +73,10 @@ describe("transfer-hook", () => {
 	// token metadata
 	const metadata: TokenMetadata = {
 		mint: mint.publicKey,
-		name: 'Testy_Token',
-		symbol: 'TTTKN',
+		name: 'Testy Token',
+		symbol: 'TESTT',
 		uri: 'https://copper-quick-koi-488.mypinata.cloud/ipfs/bafkreiblskodz5bwtelz4id437rnhsndtq3rfh7jjsgaj72wb55cgnbbea',
-		additionalMetadata: [['description', 'a token with metadata & transfer hook. I hope.']],
+		additionalMetadata: [['description', 'combining concepts and learning the basics']],
 	};
 	const metadataLen = pack(metadata).length;
 	const metadataExtension = TYPE_SIZE + LENGTH_SIZE;
@@ -89,11 +91,12 @@ describe("transfer-hook", () => {
 		const lamports =
 			await provider.connection.getMinimumBalanceForRentExemption(mintLen + spaceWithoutMetaDataExtension + metadataLen + metadataExtension);
 
+
 		const transaction = new Transaction().add(
 			SystemProgram.createAccount({
 				fromPubkey: wallet.publicKey,
 				newAccountPubkey: mint.publicKey,
-				space: mintLen,
+				space: mintLen + spaceWithoutMetaDataExtension + metadataExtension + metadataLen,
 				lamports: lamports,
 				programId: TOKEN_2022_PROGRAM_ID,
 			}),
@@ -103,13 +106,30 @@ describe("transfer-hook", () => {
 				program.programId, // Transfer Hook Program ID
 				TOKEN_2022_PROGRAM_ID
 			),
+			createInitializeMetadataPointerInstruction(
+				mint.publicKey,
+				wallet.publicKey,
+				mint.publicKey,
+				TOKEN_2022_PROGRAM_ID
+			),
+
 			createInitializeMintInstruction(
 				mint.publicKey,
 				decimals,
 				wallet.publicKey,
-				null,
+				wallet.publicKey,
 				TOKEN_2022_PROGRAM_ID
-			)
+			),
+			createInitializeInstruction({
+				programId: TOKEN_2022_PROGRAM_ID,
+				mint: mint.publicKey,
+				metadata: mint.publicKey,
+				mintAuthority: wallet.publicKey,
+				name: "Testy Token",
+				symbol: "TESTT",
+				uri: "https://copper-quick-koi-488.mypinata.cloud/ipfs/bafkreiblskodz5bwtelz4id437rnhsndtq3rfh7jjsgaj72wb55cgnbbea",
+				updateAuthority: wallet.publicKey
+			})
 		);
 
 		const txSig = await sendAndConfirmTransaction(
@@ -118,10 +138,8 @@ describe("transfer-hook", () => {
 			[wallet.payer, mint],
 			{ skipPreflight: true, commitment: "finalized" }
 		);
-
 		const txDetails = await program.provider.connection.getTransaction(txSig, { maxSupportedTransactionVersion: 0, commitment: 'confirmed' });
 		console.log(txDetails.meta.logMessages);
-
 
 		console.log(`Transaction Signature: ${txSig}`);
 	});
