@@ -78,25 +78,24 @@ describe("transfer-hook", () => {
 		uri: 'https://copper-quick-koi-488.mypinata.cloud/ipfs/bafkreiblskodz5bwtelz4id437rnhsndtq3rfh7jjsgaj72wb55cgnbbea',
 		additionalMetadata: [['description', 'combining concepts and learning the basics']],
 	};
-	const metadataLen = pack(metadata).length;
-	const metadataExtension = TYPE_SIZE + LENGTH_SIZE;
-	const spaceWithoutMetaDataExtension = getMintLen([ExtensionType.MetadataPointer])
+	const metadataLen = pack(metadata).length + TYPE_SIZE + LENGTH_SIZE;
+	const mintLen = getMintLen([ExtensionType.TransferHook, ExtensionType.MetadataPointer]);
 
 
 
 
 	it("Create Mint Account with Transfer Hook Extension & MetaData", async () => {
 		const extensions = [ExtensionType.TransferHook];
-		const mintLen = getMintLen(extensions);
+		//	const mintLen = getMintLen(extensions);
 		const lamports =
-			await provider.connection.getMinimumBalanceForRentExemption(mintLen + spaceWithoutMetaDataExtension + metadataLen + metadataExtension);
+			await provider.connection.getMinimumBalanceForRentExemption(metadataLen + mintLen);
 
 
 		const transaction = new Transaction().add(
 			SystemProgram.createAccount({
 				fromPubkey: wallet.publicKey,
 				newAccountPubkey: mint.publicKey,
-				space: mintLen + spaceWithoutMetaDataExtension + metadataExtension + metadataLen,
+				space: mintLen, //+ metadataLen,
 				lamports: lamports,
 				programId: TOKEN_2022_PROGRAM_ID,
 			}),
@@ -117,7 +116,7 @@ describe("transfer-hook", () => {
 				mint.publicKey,
 				decimals,
 				wallet.publicKey,
-				wallet.publicKey,
+				null,
 				TOKEN_2022_PROGRAM_ID
 			),
 			createInitializeInstruction({
