@@ -10,6 +10,7 @@ use spl_tlv_account_resolution::{
     account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList,
 };
 use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
+use pyth_sdk_solana::state::load_price_account;
 
 declare_id!("81K7K6J64gX5gErdigDQMT4fsi2GqqW7zo9eDhgBD6gd");
 
@@ -17,6 +18,11 @@ declare_id!("81K7K6J64gX5gErdigDQMT4fsi2GqqW7zo9eDhgBD6gd");
 pub enum MyError {
     #[msg("The amount is too big")]
     AmountTooBig,
+
+    #[msg("NYSEH only trades within NYSE Hours. The market is closed, or halted.")]
+    MarketClosed,
+    #[msg("Failed to read SPY Oracle status! NYSEH can't transfer without this market data")]
+    InvalidOracle,
 }
 
 #[program]
@@ -80,6 +86,7 @@ pub mod tt_hook {
      //       msg!("The amount is too big {0}", amount);
      //   //    return err!(MyError::AmountTooBig);
      //   }
+        let spy_account_info = ctx.remaining_accounts.get(0).ok_or(ProgramError::NotEnoughAccountKeys)?;
 
         let counter = &mut ctx.accounts.counter_account;
         counter.counter += 1;
