@@ -7,7 +7,7 @@ use anchor_spl::{
     token_interface::{Mint, TokenAccount, TokenInterface, metadata_pointer},
 };
 use spl_tlv_account_resolution::{
-    account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList,
+    account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList, solana_pubkey::Pubkey as SplPubkey
 };
 use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
 use pyth_sdk_solana::state::load_price_account;
@@ -32,6 +32,8 @@ pub mod tt_hook {
     pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
+        pub const MAINNET_ORACLE: Pubkey = pubkey!("YovP1Cfbi9v7F75D5iio4YpG9M6yDStWnToDovfSRe9");
+        pub const DEVNET_ORACLE: anchor_lang::prelude::Pubkey = pubkey!("8v9W97KMc9YySNoYvAn2itGptE6HkE1y7qN9p6SgA5vY");
 
         // The `addExtraAccountsToInstruction` JS helper function resolving incorrectly
         let account_metas = vec![
@@ -42,6 +44,12 @@ pub mod tt_hook {
                 false, // is_signer
                 true,  // is_writable
             ).unwrap(),
+            ExtraAccountMeta::new_with_pubkey(
+                // devnet 
+                &SplPubkey::from(DEVNET_ORACLE.to_bytes()),
+                false,
+                false,
+            ).unwrap()
         ];
 
         // calculate account size
@@ -87,6 +95,10 @@ pub mod tt_hook {
      //   //    return err!(MyError::AmountTooBig);
      //   }
         let spy_account_info = ctx.remaining_accounts.get(0).ok_or(ProgramError::NotEnoughAccountKeys)?;
+        let price_account = load_price_account(*spy_account_info.data.borrow()).map_err(|_| error!(MyError::InvalidOracle))?;
+        if price_account.agg.status != pyth_sdk_solana::state::PriceStatus::Trading {
+            return err!(MyError::MarketClosed);
+        }
 
         let counter = &mut ctx.accounts.counter_account;
         counter.counter += 1;
