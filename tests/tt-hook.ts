@@ -23,6 +23,7 @@ import {
 	LENGTH_SIZE,
 	createTransferCheckedWithTransferHookInstruction,
 	createInitializeMetadataPointerInstruction,
+	getExtraAccountMetaAddress
 } from "@solana/spl-token";
 import { createInitializeInstruction, pack, type TokenMetadata } from "@solana/spl-token-metadata";
 

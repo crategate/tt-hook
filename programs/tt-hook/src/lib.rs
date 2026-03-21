@@ -10,7 +10,7 @@ use spl_tlv_account_resolution::{
     account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList, solana_pubkey::Pubkey as SplPubkey
 };
 use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
-use pyth_sdk_solana::state::load_price_account;
+use pyth_sdk_solana::state::{load_price_account, SolanaPriceAccount};
 
 declare_id!("81K7K6J64gX5gErdigDQMT4fsi2GqqW7zo9eDhgBD6gd");
 
@@ -95,7 +95,8 @@ pub mod tt_hook {
      //   //    return err!(MyError::AmountTooBig);
      //   }
         let spy_account_info = ctx.remaining_accounts.get(0).ok_or(ProgramError::NotEnoughAccountKeys)?;
-        let price_account = load_price_account(*spy_account_info.data.borrow()).map_err(|_| error!(MyError::InvalidOracle))?;
+        let data = spy_account_info.data.borrow();
+        let price_account: &SolanaPriceAccount = load_price_account(*data).map_err(|_| error!(MyError::InvalidOracle))?;
         if price_account.agg.status != pyth_sdk_solana::state::PriceStatus::Trading {
             return err!(MyError::MarketClosed);
         }
@@ -187,6 +188,8 @@ pub struct TransferHook<'info> {
         bump
     )]
     pub counter_account: Account<'info, CounterAccount>,
+    /// CHECK: SPY price feed from Pyth
+    pub spy_oracle: AccountInfo<'info>
 }
 
 #[account]
