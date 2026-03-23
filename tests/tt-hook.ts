@@ -75,7 +75,7 @@ describe("transfer-hook", () => {
 	const metadata: TokenMetadata = {
 		mint: mint.publicKey,
 		name: 'Testy Token',
-		symbol: 'TESTT',
+		symbol: 'TESTT2',
 		uri: 'https://copper-quick-koi-488.mypinata.cloud/ipfs/bafkreiblskodz5bwtelz4id437rnhsndtq3rfh7jjsgaj72wb55cgnbbea',
 		additionalMetadata: [['description', 'combining concepts and learning the basics']],
 	};
@@ -126,7 +126,7 @@ describe("transfer-hook", () => {
 				metadata: mint.publicKey,
 				mintAuthority: wallet.publicKey,
 				name: "Testy Token",
-				symbol: "TESTT",
+				symbol: "TESTT2",
 				uri: "https://copper-quick-koi-488.mypinata.cloud/ipfs/bafkreiblskodz5bwtelz4id437rnhsndtq3rfh7jjsgaj72wb55cgnbbea",
 				updateAuthority: wallet.publicKey
 			})
@@ -148,7 +148,7 @@ describe("transfer-hook", () => {
 	// Fund the sender token account with 100 tokens
 	it("Create Token Accounts and Mint Tokens", async () => {
 		// 100 tokens
-		const amount = 222 * 10 ** decimals;
+		const amount = 999 * 10 ** decimals;
 
 		const transaction = new Transaction().add(
 			createAssociatedTokenAccountInstruction(

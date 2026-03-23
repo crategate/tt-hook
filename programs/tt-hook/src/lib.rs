@@ -23,19 +23,21 @@ pub enum MyError {
     MarketClosed,
     #[msg("Failed to read SPY Oracle status! NYSEH can't transfer without this market data")]
     InvalidOracle,
+    #[msg("Borrowing and translating the spy data failed!!")]
+    InvalidBorrowSpy,
 }
 
 #[program]
 pub mod tt_hook {
     use super::*;
+      pub const MAINNET_ORACLE: Pubkey = pubkey!("YovP1Cfbi9v7F75D5iio4YpG9M6yDStWnToDovfSRe9");
+      pub const DEVNET_ORACLE: anchor_lang::prelude::Pubkey = pubkey!("HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J");//
+//  8v9W97KMc9YySNoYvAn2itGptE6HkE1y7qN9p6SgA5vY
 
     pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
-        pub const MAINNET_ORACLE: Pubkey = pubkey!("YovP1Cfbi9v7F75D5iio4YpG9M6yDStWnToDovfSRe9");
-        pub const DEVNET_ORACLE: anchor_lang::prelude::Pubkey = pubkey!("8v9W97KMc9YySNoYvAn2itGptE6HkE1y7qN9p6SgA5vY");
-
-        // The `addExtraAccountsToInstruction` JS helper function resolving incorrectly
+              // The `addExtraAccountsToInstruction` JS helper function resolving incorrectly
         let account_metas = vec![
             ExtraAccountMeta::new_with_seeds(
                 &[Seed::Literal {
@@ -94,10 +96,12 @@ pub mod tt_hook {
      //       msg!("The amount is too big {0}", amount);
      //   //    return err!(MyError::AmountTooBig);
      //   }
-        let spy_account_info = ctx.remaining_accounts.get(0).ok_or(ProgramError::NotEnoughAccountKeys)?;
-        let data = spy_account_info.data.borrow();
-        let price_account: &SolanaPriceAccount = load_price_account(*data).map_err(|_| error!(MyError::InvalidOracle))?;
-        if price_account.agg.status != pyth_sdk_solana::state::PriceStatus::Trading {
+        let spy_account_info = &ctx.accounts.spy_oracle;
+        let data = spy_account_info.try_borrow_data().map_err(|_| error!(MyError::InvalidBorrowSpy))?;
+        let price_account: &SolanaPriceAccount = load_price_account(&data).map_err(|_| error!(MyError::InvalidOracle))?;
+
+        if price_account.agg.status == pyth_sdk_solana::state::PriceStatus::Trading {
+            msg!("blocking because status is trading, don't forget to flip this test");
             return err!(MyError::MarketClosed);
         }
 
@@ -105,7 +109,7 @@ pub mod tt_hook {
         counter.counter += 1;
        // ctx.accounts.counter_account.counter.checked_add(1).unwrap();
 
-        msg!("This token has been transfered {} times", counter.counter);
+        msg!("The NYSEH token has transfered {} times", counter.counter);
 
         Ok(())
     }
