@@ -22,4 +22,4 @@ test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 \"tests/**/*.ts\""
 url = "https://api.devnet.solana.com" # Source to clone from
 
 [[test.validator.clone]]
-address = "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J"
+address = "CqFJLrT4rSpA46RQkVYWn8tdBDuQ7p7RXcp6Um76oaph"
