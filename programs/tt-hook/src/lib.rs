@@ -19,8 +19,6 @@ pub enum MyError {
     #[msg("The amount is too big")]
     AmountTooBig,
 
-    #[msg("NYSEH only trades within NYSE Hours. The market is closed, or halted.")]
-    MarketClosed,
     #[msg("Failed to read SPY Oracle status! NYSEH can't transfer without this market data")]
     InvalidOracle,
     #[msg("Borrowing and translating the spy data failed!!")]
@@ -30,12 +28,9 @@ pub enum MyError {
 #[program]
 pub mod tt_hook {
     use super::*;
-      pub const MAINNET_ORACLE: Pubkey = pubkey!("YovP1Cfbi9v7F75D5iio4YpG9M6yDStWnToDovfSRe9");
-      pub const DEVNET_ORACLE: anchor_lang::prelude::Pubkey = pubkey!("CqFJLrT4rSpA46RQkVYWn8tdBDuQ7p7RXcp6Um76oaph");//
-    // SPY 
-    //9owhtgrdLiUMAH9JKxYFt5pUY4Luy4EzzLhdcWPVuDyy
-
-    pub fn initialize_extra_account_meta_list(
+      pub const DEVNET_ORACLE: anchor_lang::prelude::Pubkey = pubkey!("Fk1p2HvsEFCVuh7sHFY7gCcBhhfiyBDeB4WzqZw4xACA");//
+    //
+      pub fn initialize_extra_account_meta_list(
         ctx: Context<InitializeExtraAccountMetaList>,
     ) -> Result<()> {
               // The `addExtraAccountsToInstruction` JS helper function resolving incorrectly
@@ -103,7 +98,6 @@ pub mod tt_hook {
 
         if price_account.agg.status != pyth_sdk_solana::state::PriceStatus::Trading {
             msg!("blocking because status is trading, don't forget to flip this test");
-            return err!(MyError::MarketClosed);
         }
 
         let counter = &mut ctx.accounts.counter_account;
@@ -193,8 +187,13 @@ pub struct TransferHook<'info> {
         bump
     )]
     pub counter_account: Account<'info, CounterAccount>,
-    /// CHECK: SPY price feed from Pyth
+    /// CHECK: PDA account which updates from the crank script
     pub spy_oracle: AccountInfo<'info>
+}
+#[account]
+pub struct MarketStatus {
+    pub current_state: u8,
+    pub last_updated_timestamp: i64,
 }
 
 #[account]
