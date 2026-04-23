@@ -10,7 +10,6 @@ use spl_tlv_account_resolution::{
     account::ExtraAccountMeta, seeds::Seed, state::ExtraAccountMetaList, solana_pubkey::Pubkey as SplPubkey
 };
 use spl_transfer_hook_interface::instruction::{ExecuteInstruction, TransferHookInstruction};
-use pyth_sdk_solana::state::{load_price_account, SolanaPriceAccount};
 
 declare_id!("81K7K6J64gX5gErdigDQMT4fsi2GqqW7zo9eDhgBD6gd");
 
@@ -88,22 +87,27 @@ pub mod tt_hook {
     }
 
     pub fn transfer_hook(ctx: Context<TransferHook>, amount: u64) -> Result<()> {
+        let fee;
 
-        let oracle_account_info = &ctx.accounts.oracle;
-        let data = oracle_account_info.try_borrow_data().map_err(|_| error!(MyError::InvalidBorrowSpy))?;
 
-        let price_account: &SolanaPriceAccount = load_price_account(&data).map_err(|_| error!(MyError::InvalidOracle))?;
+        let oracle_data = ctx.accounts.oracle.try_borrow_data().map_err(|_| error!(MyError::InvalidOracle))?;
 
-        if price_account.agg.status != pyth_sdk_solana::state::PriceStatus::Trading {
-            msg!("blocking because status is trading, don't forget to flip this test");
+        let market_status = MarketStatus::try_deserialize(&mut &oracle_data[..]).map_err(|_| error!(MyError::InvalidOracle))?;
+
+
+        match market_status.current_state {
+            0 => fee = 0.0,
+            1 => fee = 0.01,
+            2 => fee = 0.025,
+            3 => fee = 0.08,
+            _ => fee = 0.0,
         }
-
 
         let counter = &mut ctx.accounts.counter_account;
         counter.counter += 1;
        // ctx.accounts.counter_account.counter.checked_add(1).unwrap();
 
-        msg!("The NYSEH token has transfered {} times, trade status: {}", counter.counter, price_account.agg.status);
+        msg!("The NYSEH token has transfered {} times, current fee: {} percent", counter.counter, fee * 100.0);
 
         Ok(())
     }
@@ -187,7 +191,7 @@ pub struct TransferHook<'info> {
     )]
     pub counter_account: Account<'info, CounterAccount>,
     /// CHECK: PDA account which updates from the crank script
-    pub oracle: Account<'info, MarketStatus>
+    pub oracle: UncheckedAccount<'info>
 }
 #[account]
 pub struct MarketStatus {
