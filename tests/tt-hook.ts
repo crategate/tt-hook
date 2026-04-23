@@ -19,11 +19,13 @@ import {
     createAssociatedTokenAccountInstruction,
     createMintToInstruction,
     getAssociatedTokenAddressSync,
+    TransferFeeConfig,
     TYPE_SIZE,
     LENGTH_SIZE,
     createTransferCheckedWithTransferHookInstruction,
     createInitializeMetadataPointerInstruction,
-    getExtraAccountMetaAddress
+    getExtraAccountMetaAddress,
+    createInitializeTransferFeeConfigInstruction
 } from "@solana/spl-token";
 import { createInitializeInstruction, pack, type TokenMetadata } from "@solana/spl-token-metadata";
 
@@ -86,11 +88,15 @@ describe("transfer-hook", () => {
 
 
     it("Create Mint Account with Transfer Hook Extension & MetaData", async () => {
-        const extensions = [ExtensionType.TransferHook];
+        const extensions = [ExtensionType.TransferHook, ExtensionType.TransferFeeConfig];
         //	const mintLen = getMintLen(extensions);
         const lamports =
             await provider.connection.getMinimumBalanceForRentExemption(metadataLen + mintLen);
 
+        const [feeAuthorityPda] = PublicKey.findProgramAddressSync(
+            [Buffer.from("fee_authority")],
+            new PublicKey("3rTiktUXLdYgnsPfPv3YLduUYdLTQANnzC8muZprYYHR")
+        );
 
         const transaction = new Transaction().add(
             SystemProgram.createAccount({
@@ -105,6 +111,11 @@ describe("transfer-hook", () => {
                 wallet.publicKey,
                 program.programId, // Transfer Hook Program ID
                 TOKEN_2022_PROGRAM_ID
+            ),
+            createInitializeTransferFeeConfigInstruction(
+                mint.publicKey,
+                wallet,
+
             ),
             createInitializeMetadataPointerInstruction(
                 mint.publicKey,
