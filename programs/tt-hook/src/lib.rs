@@ -28,6 +28,7 @@ pub enum MyError {
 #[program]
 pub mod tt_hook {
     use super::*;
+        // this is the PDA address which should have the MarketStatus account type
       pub const DEVNET_ORACLE: anchor_lang::prelude::Pubkey = pubkey!("Fk1p2HvsEFCVuh7sHFY7gCcBhhfiyBDeB4WzqZw4xACA");//
     //
       pub fn initialize_extra_account_meta_list(
@@ -88,12 +89,8 @@ pub mod tt_hook {
 
     pub fn transfer_hook(ctx: Context<TransferHook>, amount: u64) -> Result<()> {
 
-     //   if amount > 50 {
-     //       msg!("The amount is too big {0}", amount);
-     //   //    return err!(MyError::AmountTooBig);
-     //   }
-        let spy_account_info = &ctx.accounts.spy_oracle;
-        let data = spy_account_info.try_borrow_data().map_err(|_| error!(MyError::InvalidBorrowSpy))?;
+        let oracle_account_info = &ctx.accounts.oracle;
+        let data = oracle_account_info.try_borrow_data().map_err(|_| error!(MyError::InvalidBorrowSpy))?;
         let price_account: &SolanaPriceAccount = load_price_account(&data).map_err(|_| error!(MyError::InvalidOracle))?;
 
         if price_account.agg.status != pyth_sdk_solana::state::PriceStatus::Trading {
@@ -188,7 +185,7 @@ pub struct TransferHook<'info> {
     )]
     pub counter_account: Account<'info, CounterAccount>,
     /// CHECK: PDA account which updates from the crank script
-    pub spy_oracle: AccountInfo<'info>
+    pub oracle: Account<'info, MarketStatus>
 }
 #[account]
 pub struct MarketStatus {
