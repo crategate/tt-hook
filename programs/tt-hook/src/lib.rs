@@ -91,11 +91,13 @@ pub mod tt_hook {
 
         let oracle_account_info = &ctx.accounts.oracle;
         let data = oracle_account_info.try_borrow_data().map_err(|_| error!(MyError::InvalidBorrowSpy))?;
+
         let price_account: &SolanaPriceAccount = load_price_account(&data).map_err(|_| error!(MyError::InvalidOracle))?;
 
         if price_account.agg.status != pyth_sdk_solana::state::PriceStatus::Trading {
             msg!("blocking because status is trading, don't forget to flip this test");
         }
+
 
         let counter = &mut ctx.accounts.counter_account;
         counter.counter += 1;
