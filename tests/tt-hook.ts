@@ -97,6 +97,8 @@ describe("transfer-hook", () => {
             [Buffer.from("fee_authority")],
             new PublicKey("3rTiktUXLdYgnsPfPv3YLduUYdLTQANnzC8muZprYYHR")
         );
+        const lottoVault = new PublicKey("J6J9SuxEfe9aiMLha7ERX3uQhHXaD4Y7bFkJYQGP4guR");
+        const initialFee = 0;
 
         const transaction = new Transaction().add(
             SystemProgram.createAccount({
@@ -114,8 +116,11 @@ describe("transfer-hook", () => {
             ),
             createInitializeTransferFeeConfigInstruction(
                 mint.publicKey,
-                wallet,
-
+                feeAuthorityPda,
+                lottoVault,
+                initialFee,
+                BigInt(900),
+                TOKEN_2022_PROGRAM_ID
             ),
             createInitializeMetadataPointerInstruction(
                 mint.publicKey,
